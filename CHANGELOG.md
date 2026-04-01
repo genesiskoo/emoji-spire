@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-01 — Phase 2 완료
+**Phase 2: Command (콘텐츠 자동화) 완료**
+- `/implement` 커맨드: 기능 구현 → 빌드 확인 → code-reviewer 리뷰 → 수정 → CHANGELOG 기록 워크플로우
+- `/add-card` 커맨드: 카드 스펙을 인수로 받아 cards.ts에 자동 추가, 빌드 + 리뷰 포함
+- `/add-enemy` 커맨드: 적 스펙을 인수로 받아 enemies.ts에 자동 추가, 빌드 + 리뷰 포함
+- 이벤트 시스템 구현: 치유의 샘/수상한 상자/행상인 3종 랜덤 이벤트 (EventScene.tsx, data/events.ts)
+- 상점 시스템 구현: 카드 3장 구매(50~100G), 카드 1장 제거(75G), HP 회복(30G→+10HP) (Shop.tsx)
+- 신규 카드: 화염구 (비용 2, 공격, 적 하나에게 12 피해)
+- 신규 적: 버섯맨 🍄 (HP 35, 독포자 공격6+약화1 / 치유 HP5 회복)
+
 ## 2026-04-01 (5)
 - 적 추가: 버섯맨 🍄 (HP 35, 독포자 공격6+약화1 / 치유 HP5 회복), pickRandomEnemies 풀에 포함
 
