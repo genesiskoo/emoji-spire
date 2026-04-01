@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "npm run build && npx tsc --noEmit || { echo '{\"continue\": false, \"stopReason\": \"빌드/타입 체크 실패 — 에러를 수정한 후 커밋하세요.\"}'; exit 1; }",
+            "timeout": 60,
+            "statusMessage": "커밋 전 빌드/타입 체크 중..."
+          }
+        ]
+      }
+    ]
+  }
+}

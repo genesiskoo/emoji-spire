@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-01 — Phase 4 Hook 완료
+- `.claude/settings.json` 생성: PreToolUse/Bash 훅 — `git commit` 실행 전 `npm run build && tsc --noEmit` 자동 검증, 실패 시 커밋 차단
+- `.git/hooks/pre-commit` 생성: 터미널 git commit에도 동일한 빌드/타입 체크 강제 적용
+
+## Phase 4 핵심 발견사항 (2026-04-01)
+1. `if` 필드(`"Bash(git commit*)"`)로 훅 발동 조건을 좁힐 수 있어 불필요한 훅 실행 방지 가능
+2. 훅 출력에 `{"continue": false, "stopReason": "..."}` JSON을 포함하면 Claude Code가 해당 툴 호출을 차단
+3. `.claude/settings.json`이 세션 시작 시 없었으면 훅 감시자가 해당 디렉토리를 감시하지 않음 → `/hooks` 메뉴 열기 또는 Claude Code 재시작으로 적용
+4. Claude Code 훅(settings.json)은 Claude가 커밋할 때, git 훅(.git/hooks/pre-commit)은 터미널에서 직접 커밋할 때 적용 — 두 레이어를 함께 설정하는 게 완전한 보호
+
 ## 2026-04-01 — 세션 마무리
 - SESSION_CONTEXT.md → CHANGELOG.md로 통합, SESSION_CONTEXT.md 삭제
 - session-start.md에서 SESSION_CONTEXT 참조 제거 (CHANGELOG 단일 관리)
