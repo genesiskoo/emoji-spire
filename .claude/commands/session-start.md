@@ -16,13 +16,11 @@ Start a new session by checking project health.
 
 3. **Run `npm run build`** and report the result. If it fails, show the errors and ask the user how to proceed — do not auto-fix without permission.
 
-4. **Read `CHANGELOG.md`** and show the last 5 entries so the previous session's work is visible.
+4. **Read `CHANGELOG.md`** and show the last 5 entries so the previous session's work is visible. Also check for any phase findings sections at the top of the file.
 
-5. **Read `SESSION_CONTEXT.md`** if it exists, and summarize the current phase and next steps. If the file does not exist, skip this step and note that no session context was found.
-
-6. **Report status**:
+5. **Report status**:
    ```
-   Session ready. Current status: [phase/status summary from CHANGELOG and SESSION_CONTEXT]
+   Session ready. Current status: [phase/status summary from CHANGELOG]
    ```
 
 7. **If `$ARGUMENTS` is provided**, treat it as the task to begin immediately after the health check completes. Transition directly into that task without waiting for further input.

@@ -7,49 +7,34 @@ description: "Generate or update GDD.md (Game Design Document). Triggers on: GDD
 
 Generate a Game Design Document (`GDD.md`) by parsing the project's data files and formatting the output according to the reference template. Follow every step below in order.
 
-## Step 1 — Read the output format reference
+## Step 1 — Run the data parser script
+
+Run `scripts/parse-data.py` from the project root to get all game data as structured JSON:
+
+```bash
+python .claude/skills/generate-gdd/scripts/parse-data.py
+```
+
+The script parses `src/data/cards.ts`, `src/data/enemies.ts`, `src/data/events.ts` and outputs a single JSON object to stdout with the following structure:
+
+```json
+{
+  "cards":   [ { "name", "cost", "type", "description" }, ... ],
+  "enemies": [ { "name", "emoji", "hp", "role", "actions" }, ... ],
+  "events":  [ { "title", "choices", "effects", "choice_count" }, ... ],
+  "stats": {
+    "total_cards", "avg_cost", "attack_cards", "defense_cards", "skill_cards",
+    "total_enemies", "avg_hp", "normal_enemies", "elite_enemies", "boss_enemies",
+    "total_events", "total_choices"
+  }
+}
+```
+
+Use the JSON output as the **sole data source** for all subsequent steps. Do not re-read the TypeScript source files to extract data.
+
+## Step 2 — Read the output format reference
 
 Read `references/output-format.md` (located in the same directory as this SKILL.md file, i.e. `.claude/skills/generate-gdd/references/output-format.md`). This file defines the exact table formats to use for cards, enemies, and events. Use it as the authoritative template for all tables generated in Step 3.
-
-## Step 2 — Parse game data files
-
-Read the following three files in parallel and extract the data described below:
-
-### `src/data/cards.ts`
-For each card object, extract:
-- `id` — use as the display name (convert camelCase to readable if needed)
-- `name` — display name in Korean/English as written
-- `cost` — energy cost (number)
-- `type` — card type (`'attack'` → 공격, `'defense'` → 방어, `'skill'` → 스킬)
-- `description` — effect description string
-
-Also calculate summary statistics:
-- Total card count
-- Average cost (rounded to 1 decimal)
-- Count per type (공격 / 방어 / 스킬)
-
-### `src/data/enemies.ts`
-For each enemy object, extract:
-- `name` — display name
-- `emoji` — visual identifier
-- `hp` (or `minHp`/`maxHp` if range) — HP value(s)
-- `intents` — list of action names and their values (공격 damage / 방어 block / 버프 etc.)
-
-Also calculate summary statistics:
-- Total enemy count
-- Average HP (rounded to nearest integer)
-- Count per role: 일반 / 엘리트 / 보스 (infer from HP range and name)
-
-### `src/data/events.ts`
-For each event object, extract:
-- `name` — event title
-- `description` — flavor text (first 60 characters if long)
-- `choices` — array of choice labels
-- `effects` — what each choice does (hp change, gold change, card add/remove)
-
-Also calculate summary statistics:
-- Total event count
-- Total choice count across all events
 
 ## Step 3 — Generate GDD.md
 
