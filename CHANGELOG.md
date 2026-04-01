@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-01 — 턴 전환 배너 + screen shake 추가
+- "⚔️ 적의 턴" / "🛡️ 내 턴" fixed 오버레이 배너 (슬라이드인 1.5s), 전투 시작·턴 종료 시 순차 표시
+- 플레이어 피격 시 게임 콘텐츠 screen-shake 0.45s
+- banner overlay를 screen-shake 래퍼 밖에 배치 → fixed 위치 보존
+
 ## 2026-04-01 — 적 피격 모션 + 적·플레이어 턴 팝업 통합
 - 적 피격: enemy-hurt(shake+빨간깜빡 0.4s), 사망: enemy-dying(축소+투명 0.55s forwards)
 - endPlayerTurn 전후 HP 비교 → 적 HP 변화 팝업(힐 초록), 플레이어 피격 팝업(빨강)

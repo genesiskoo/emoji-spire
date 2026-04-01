@@ -52,6 +52,12 @@ interface DamagePopup {
   target: number | 'player'; // number = enemyIndex
 }
 
+// 컴포넌트 외부 상수 — 매 렌더 재생성 방지
+const BANNER_CONFIG = {
+  enemy: { text: '⚔️ 적의 턴', style: 'bg-red-900/85 text-red-100 border-red-500' },
+  player: { text: '🛡️ 내 턴', style: 'bg-blue-900/85 text-blue-100 border-blue-500' },
+} as const;
+
 export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   const [battle, setBattle] = useState<BattleState>(initialBattle);
   const [log, setLog] = useState<string>('전투 시작!');
@@ -61,8 +67,15 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   const [popups, setPopups] = useState<DamagePopup[]>([]);
   const [hurtEnemies, setHurtEnemies] = useState<Set<number>>(new Set());
   const [dyingEnemies, setDyingEnemies] = useState<Set<number>>(new Set());
+  const [banner, setBanner] = useState<'enemy' | 'player' | null>(null);
+  const [isScreenShaking, setIsScreenShaking] = useState(false);
   const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const popupIdRef = useRef(0);
+
+  // 전투 시작 시 "내 턴" 배너
+  useEffect(() => {
+    setBanner('player');
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -98,6 +111,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
     const playerDelta = after.player.hp - before.player.hp;
     if (playerDelta !== 0) {
       newPopups.push({ id: ++popupIdRef.current, value: playerDelta, target: 'player' });
+      if (playerDelta < 0) setIsScreenShaking(true);
     }
 
     if (newPopups.length > 0) setPopups(prev => [...prev, ...newPopups]);
@@ -179,6 +193,8 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
     if (result) {
       setIsOver(true);
       onBattleEnd(result);
+    } else {
+      setBanner('enemy'); // 전투가 계속될 때만 배너 표시 (C-2 fix)
     }
   }
 
@@ -186,11 +202,28 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   const isTargeting = selectedCardId !== null;
 
   return (
-    // 빈 영역 클릭 시 카드 선택 해제
-    <div
-      className="flex flex-col h-screen bg-gray-900 text-white p-4 gap-4"
-      onClick={() => setSelectedCardId(null)}
-    >
+    // 외부 래퍼: transform 없음 → fixed 배너가 viewport 기준으로 올바르게 위치 (C-1 fix)
+    <div className="relative h-screen">
+      {/* 턴 전환 배너 오버레이 — screen-shake 래퍼 바깥에 있어 흔들림 영향 없음 */}
+      {banner && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div
+            className={['turn-banner text-4xl font-black px-10 py-5 rounded-2xl border-2 shadow-2xl', BANNER_CONFIG[banner].style].join(' ')}
+            onAnimationEnd={() => {
+              if (banner === 'enemy' && !isOver) setBanner('player');
+              else setBanner(null);
+            }}
+          >
+            {BANNER_CONFIG[banner].text}
+          </div>
+        </div>
+      )}
+      {/* 게임 콘텐츠 — screen-shake가 이 div에만 적용됨 */}
+      <div
+        className={['flex flex-col h-full bg-gray-900 text-white p-4 gap-4', isScreenShaking ? 'screen-shake' : ''].join(' ')}
+        onAnimationEnd={e => { if (e.animationName === 'screen-shake') setIsScreenShaking(false); }}
+        onClick={() => setSelectedCardId(null)}
+      >
       {/* 헤더: 턴 + 로그 + 종료 버튼 */}
       <div className="flex justify-between items-center" onClick={e => e.stopPropagation()}>
         <span className="text-sm text-gray-400">⚔️ 전투 — 턴 {turn}</span>
@@ -328,6 +361,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
             onPlayCard={handleImmediatePlay}
           />
         </div>
+      </div>
       </div>
     </div>
   );
