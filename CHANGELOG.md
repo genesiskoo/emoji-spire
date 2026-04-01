@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-01 — Vitest 세팅 + battle.ts 유닛 테스트 추가
+- vitest 설치, `npm run test` 스크립트 추가
+- `src/__tests__/battle.test.ts`: dealDamage(8), addBlock(3), playCard(8), endPlayerTurn(8) 총 27개 테스트
+- pre-commit 훅에 `npm run test` 추가 (settings.json + .git/hooks/pre-commit)
+
 ## 2026-04-01 — Phase 4 Hook 완료
 - `.claude/settings.json` 생성: PreToolUse/Bash 훅 — `git commit` 실행 전 `npm run build && tsc --noEmit` 자동 검증, 실패 시 커밋 차단
 - `.git/hooks/pre-commit` 생성: 터미널 git commit에도 동일한 빌드/타입 체크 강제 적용
