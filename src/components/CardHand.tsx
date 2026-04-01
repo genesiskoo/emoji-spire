@@ -4,6 +4,7 @@ interface CardHandProps {
   cards: Card[];
   energy: number;
   selectedCardId: string | null;
+  playingCardId: string | null;
   onSelectCard: (cardId: string | null) => void;
   onPlayCard: (cardId: string) => void;
 }
@@ -20,17 +21,23 @@ const CARD_TYPE_COLOR: Record<Card['type'], string> = {
   skill: 'border-yellow-500 bg-yellow-950',
 };
 
-export function CardHand({ cards, energy, selectedCardId, onSelectCard, onPlayCard }: CardHandProps) {
+const CARD_SELECTED_GLOW: Record<Card['type'], string> = {
+  attack: 'shadow-[0_0_18px_5px_rgba(239,68,68,0.75)]',
+  defense: 'shadow-[0_0_18px_5px_rgba(59,130,246,0.75)]',
+  skill: 'shadow-[0_0_18px_5px_rgba(234,179,8,0.75)]',
+};
+
+export function CardHand({ cards, energy, selectedCardId, playingCardId, onSelectCard, onPlayCard }: CardHandProps) {
   return (
     <div className="flex gap-2 justify-center flex-wrap">
       {cards.map((card) => {
         const playable = energy >= card.cost;
         const isSelected = card.id === selectedCardId;
+        const isFlying = card.id === playingCardId;
 
         function handleClick() {
-          if (!playable) return;
+          if (!playable || isFlying) return;
           if (card.requiresTarget) {
-            // 이미 선택된 카드를 다시 클릭하면 선택 해제
             onSelectCard(isSelected ? null : card.id);
           } else {
             onPlayCard(card.id);
@@ -41,15 +48,20 @@ export function CardHand({ cards, energy, selectedCardId, onSelectCard, onPlayCa
           <button
             key={card.id}
             onClick={handleClick}
-            disabled={!playable}
+            disabled={!playable || isFlying}
             className={[
-              'w-28 min-h-36 rounded-lg border-2 p-2 flex flex-col gap-1 text-left transition-all duration-150',
+              'w-28 min-h-36 rounded-lg border-2 p-2 flex flex-col gap-1 text-left transition-all duration-200',
               CARD_TYPE_COLOR[card.type],
-              isSelected
-                ? 'border-white ring-2 ring-white -translate-y-4 shadow-xl shadow-white/30'
-                : playable
-                  ? 'cursor-pointer hover:-translate-y-2 hover:shadow-lg hover:shadow-white/20'
-                  : 'opacity-40 cursor-not-allowed',
+              isFlying
+                ? 'card-flying'
+                : isSelected
+                  ? [
+                      'border-white -translate-y-6 scale-110',
+                      CARD_SELECTED_GLOW[card.type],
+                    ].join(' ')
+                  : playable
+                    ? 'cursor-pointer hover:-translate-y-5 hover:scale-110 hover:shadow-xl hover:shadow-white/25'
+                    : 'opacity-40 cursor-not-allowed',
             ].join(' ')}
           >
             <div className="flex justify-between items-center">

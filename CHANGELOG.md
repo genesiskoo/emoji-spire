@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-01 — 카드 애니메이션 추가 (호버 확대, 선택 글로우, 사용 시 fly-out)
+- CardHand: hover scale-110 + -translate-y-5, 타입별 선택 글로우(red/blue/yellow), playingCardId prop
+- BattleScene: playingCardId state + useRef 타이머로 fly-out 350ms 후 카드 적용, 애니메이션 중 턴 종료 차단
+- index.css: card-fly-out keyframe, .card-flying 클래스
+
 ## 2026-04-01 — Vitest 세팅 + battle.ts 유닛 테스트 추가
 - vitest 설치, `npm run test` 스크립트 추가
 - `src/__tests__/battle.test.ts`: dealDamage(8), addBlock(3), playCard(8), endPlayerTurn(8) 총 27개 테스트

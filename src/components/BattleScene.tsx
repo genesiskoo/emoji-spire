@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { BattleState, StatusEffect, Intent } from '../types';
 import { playCard, endPlayerTurn, isBattleOver } from '../logic/battle';
 import { CardHand } from './CardHand';
@@ -51,6 +51,16 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   const [log, setLog] = useState<string>('전투 시작!');
   const [isOver, setIsOver] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [playingCardId, setPlayingCardId] = useState<string | null>(null);
+  const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (playTimerRef.current !== null) clearTimeout(playTimerRef.current);
+    };
+  }, []);
+
+  const PLAY_ANIM_MS = 350;
 
   function applyAndCheck(next: BattleState, cardName: string) {
     const result = isBattleOver(next);
@@ -64,10 +74,15 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
 
   // 방어/스킬 카드 즉시 사용
   function handleImmediatePlay(cardId: string) {
-    if (isOver) return;
+    if (isOver || playingCardId) return;
     const card = battle.hand.find(c => c.id === cardId);
     if (!card) return;
-    applyAndCheck(playCard(battle, cardId), card.name);
+    const snapshot = battle;
+    setPlayingCardId(cardId);
+    playTimerRef.current = setTimeout(() => {
+      setPlayingCardId(null);
+      applyAndCheck(playCard(snapshot, cardId), card.name);
+    }, PLAY_ANIM_MS);
   }
 
   // 타겟 필요 카드 선택 (null 이면 선택 해제)
@@ -78,15 +93,21 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
 
   // 적 클릭: 선택된 카드가 있으면 해당 적에게 사용
   function handleEnemyClick(enemyIndex: number) {
-    if (isOver || !selectedCardId) return;
+    if (isOver || !selectedCardId || playingCardId) return;
     const card = battle.hand.find(c => c.id === selectedCardId);
     if (!card) return;
+    const cardId = selectedCardId;
+    const snapshot = battle;
     setSelectedCardId(null);
-    applyAndCheck(playCard(battle, selectedCardId, enemyIndex), card.name);
+    setPlayingCardId(cardId);
+    playTimerRef.current = setTimeout(() => {
+      setPlayingCardId(null);
+      applyAndCheck(playCard(snapshot, cardId, enemyIndex), card.name);
+    }, PLAY_ANIM_MS);
   }
 
   function handleEndTurn() {
-    if (isOver) return;
+    if (isOver || playingCardId) return;
     setSelectedCardId(null);
     const next = endPlayerTurn(battle);
     const result = isBattleOver(next);
@@ -115,7 +136,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
         </span>
         <button
           onClick={handleEndTurn}
-          disabled={isOver}
+          disabled={isOver || !!playingCardId}
           className="px-4 py-2 bg-orange-600 hover:bg-orange-500 rounded-lg font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           턴 종료
@@ -201,6 +222,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
             cards={hand}
             energy={energy}
             selectedCardId={selectedCardId}
+            playingCardId={playingCardId}
             onSelectCard={handleSelectCard}
             onPlayCard={handleImmediatePlay}
           />
