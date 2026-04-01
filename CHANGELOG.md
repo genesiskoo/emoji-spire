@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-01 (5)
+- 적 추가: 버섯맨 🍄 (HP 35, 독포자 공격6+약화1 / 치유 HP5 회복), pickRandomEnemies 풀에 포함
+
+## 2026-04-01 (4)
+- 카드 추가: 화염구 (비용 2, 공격, 적 하나에게 12 피해)
+
+## 2026-04-01 (3)
+- 상점 시스템 구현: 카드 3장 구매(50~100G), 카드 1장 제거(75G), HP 회복(30G→+10HP) — src/components/Shop.tsx 신규, App.tsx 플레이스홀더 대체
+
+## 2026-04-01 (2)
+- 이벤트 시스템 구현: 치유의 샘/수상한 상자/행상인 3종 랜덤 이벤트, 선택지 클릭 시 HP·골드·카드 효과 적용 후 맵 복귀 (src/data/events.ts, src/components/EventScene.tsx)
+- code-reviewer 리뷰 반영: player 허용 필드만 명시적 업데이트(hp/gold), findEventById 실패 시 맵 fallback 추가, gameEvent 변수명 충돌 수정
+
 ## 2026-04-01
 - NodeMap 컴포넌트 구현: SVG 연결선 + 절대 위치 노드, 아래→위 레이아웃, 이용 가능/현재/방문/잠금 상태 시각화
 - CardReward 컴포넌트 구현: 전투 승리 후 카드 3장 중 1장 선택, 건너뛰기 지원

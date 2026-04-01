@@ -79,6 +79,21 @@ export interface MapNode {
   visited: boolean;
 }
 
+// ===== 이벤트 =====
+export interface EventChoice {
+  text: string;
+  description: string;
+  effect: (player: Player, deck: Card[]) => { player: Player; deck: Card[] };
+}
+
+export interface GameEvent {
+  id: string;
+  title: string;
+  emoji: string;
+  description: string;
+  choices: EventChoice[];
+}
+
 // ===== 게임 상태 =====
 export type GamePhase = 'map' | 'battle' | 'reward' | 'shop' | 'event' | 'gameover' | 'victory';
 
@@ -91,4 +106,5 @@ export interface GameState {
   act: number;
   battle: BattleState | null;
   rewardCards: Card[];
+  activeEventId: string | null;
 }

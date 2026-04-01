@@ -160,9 +160,46 @@ export function createBoss(): Enemy {
   };
 }
 
+export function createMushroomMan(): Enemy {
+  const actions: EnemyAction[] = [
+    {
+      // 독포자: 공격 6 + 플레이어에게 약화 1 부여
+      intent: { type: 'attack', value: 6 },
+      execute: (state: BattleState, selfIndex: number) => {
+        const s1 = dealDamageToPlayer(state, 6, selfIndex);
+        return applyStatusEffect(s1, 'player', 'weakness', 1);
+      },
+      weight: 3,
+    },
+    {
+      // 치유: 자신 HP 5 회복
+      intent: { type: 'buff' },
+      execute: (state: BattleState, selfIndex: number) => {
+        const enemies = state.enemies.map((e, i) =>
+          i === selfIndex ? { ...e, hp: Math.min(e.hp + 5, e.maxHp) } : e
+        );
+        return { ...state, enemies };
+      },
+      weight: 1,
+    },
+  ];
+  const first = pickAction(actions);
+  return {
+    id: `mushroomman_${crypto.randomUUID()}`,
+    name: '버섯맨',
+    emoji: '🍄',
+    maxHp: 35,
+    hp: 35,
+    block: 0,
+    statusEffects: [],
+    actions,
+    currentIntent: first.intent,
+  };
+}
+
 export function pickRandomEnemies(enemyCount: number, isElite: boolean): Enemy[] {
   if (isElite) return [createElite()];
-  const pool = [createSlime, createGoblin, createSkeleton];
+  const pool = [createSlime, createGoblin, createSkeleton, createMushroomMan];
   return Array.from({ length: enemyCount }, () => {
     const fn = pool[Math.floor(Math.random() * pool.length)];
     return fn();

@@ -85,6 +85,14 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     requiresTarget: true,
     effect: (state: BattleState, targetIndex = 0) => applyStatusEffect(state, 'enemy', 'weakness', 2, targetIndex),
   },
+  {
+    name: '화염구',
+    type: 'attack',
+    cost: 2,
+    description: '적에게 12 피해를 입힌다.',
+    requiresTarget: true,
+    effect: (state: BattleState, targetIndex = 0) => dealDamage(state, targetIndex, 12),
+  },
 ];
 
 export function createCard(template: Omit<Card, 'id'>): Card {

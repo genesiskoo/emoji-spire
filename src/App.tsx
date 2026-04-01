@@ -3,10 +3,13 @@ import './index.css';
 import { BattleScene } from './components/BattleScene';
 import { NodeMap } from './components/NodeMap';
 import { CardReward } from './components/CardReward';
+import { EventScene } from './components/EventScene';
+import { Shop } from './components/Shop';
 import { initBattle, shuffle } from './logic/battle';
 import { generateMap } from './logic/map';
 import { createStarterDeck, createCard, ALL_CARDS } from './data/cards';
 import { createBoss, createElite, pickRandomEnemies } from './data/enemies';
+import { pickRandomEvent, findEventById } from './data/events';
 import type { GameState, MapNode, Card, Player } from './types';
 
 const TOTAL_ACTS = 3;
@@ -29,6 +32,7 @@ function createInitialState(): GameState {
     act: 0,
     battle: null,
     rewardCards: [],
+    activeEventId: null,
   };
 }
 
@@ -53,7 +57,8 @@ export default function App() {
       const battle = initBattle(gs.deck, enemies, gs.player.hp, gs.player.maxHp, gs.player.gold);
       setGs(prev => ({ ...prev, currentNodeId: node.id, phase: 'battle', battle }));
     } else if (node.type === 'event') {
-      setGs(prev => ({ ...prev, currentNodeId: node.id, phase: 'event' }));
+      const gameEvent = pickRandomEvent();
+      setGs(prev => ({ ...prev, currentNodeId: node.id, phase: 'event', activeEventId: gameEvent.id }));
     } else if (node.type === 'shop') {
       setGs(prev => ({ ...prev, currentNodeId: node.id, phase: 'shop' }));
     }
@@ -101,7 +106,35 @@ export default function App() {
     });
   }
 
-  // 이벤트/상점 완료 (미구현 — 방문 처리 후 맵 복귀)
+  // 이벤트 선택 완료
+  function handleEventDone(newPlayer: Player, newDeck: Card[]) {
+    setGs(prev => ({
+      ...prev,
+      player: { ...prev.player, hp: newPlayer.hp, gold: newPlayer.gold },
+      deck: newDeck,
+      map: prev.map.map(n =>
+        n.id === prev.currentNodeId ? { ...n, visited: true } : n
+      ),
+      activeEventId: null,
+      phase: 'map',
+    }));
+  }
+
+  // 상점 완료 — 변경된 플레이어/덱 반영 후 맵 복귀
+  function handleShopDone(newPlayer: Player, newDeck: Card[]) {
+    setGs(prev => ({
+      ...prev,
+      // block/statusEffects는 전투 간에 유지되지 않으므로 의도적으로 제외
+      player: { ...prev.player, hp: newPlayer.hp, gold: newPlayer.gold },
+      deck: newDeck,
+      map: prev.map.map(n =>
+        n.id === prev.currentNodeId ? { ...n, visited: true } : n
+      ),
+      phase: 'map',
+    }));
+  }
+
+  // 비전투 노드 완료 (방문 처리 후 맵 복귀)
   function handleNonBattleNodeDone() {
     setGs(prev => ({
       ...prev,
@@ -166,41 +199,29 @@ export default function App() {
   }
 
   if (gs.phase === 'event') {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center gap-6">
-        <div className="text-6xl">❓</div>
-        <h2 className="text-2xl font-bold">신비한 사건</h2>
-        <p className="text-gray-400 text-center max-w-xs">
-          낡은 석판에 알 수 없는 문자가 새겨져 있다.<br />
-          <span className="text-sm text-gray-500">(이벤트 시스템 준비 중)</span>
-        </p>
-        <button
-          onClick={handleNonBattleNodeDone}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold transition-colors"
-        >
-          계속 진행
-        </button>
-      </div>
-    );
+    const event = gs.activeEventId ? findEventById(gs.activeEventId) : undefined;
+    if (event) {
+      return (
+        <EventScene
+          event={event}
+          player={gs.player}
+          deck={gs.deck}
+          onChoose={handleEventDone}
+        />
+      );
+    }
+    // activeEventId 누락 또는 알 수 없는 id — 맵으로 복귀
+    handleNonBattleNodeDone();
+    return null;
   }
 
   if (gs.phase === 'shop') {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center gap-6">
-        <div className="text-6xl">🛒</div>
-        <h2 className="text-2xl font-bold">상인</h2>
-        <p className="text-gray-400 text-center max-w-xs">
-          상인이 다양한 물건을 펼쳐 놓고 있다.<br />
-          <span className="text-sm text-gray-500">(상점 시스템 준비 중)</span>
-        </p>
-        <p className="text-yellow-400">💰 보유 골드: {gs.player.gold}G</p>
-        <button
-          onClick={handleNonBattleNodeDone}
-          className="px-6 py-3 bg-green-700 hover:bg-green-600 rounded-xl font-bold transition-colors"
-        >
-          떠나기
-        </button>
-      </div>
+      <Shop
+        player={gs.player}
+        deck={gs.deck}
+        onLeave={handleShopDone}
+      />
     );
   }
 
