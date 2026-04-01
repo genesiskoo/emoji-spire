@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-01 — 적 피격 모션 + 적·플레이어 턴 팝업 통합
+- 적 피격: enemy-hurt(shake+빨간깜빡 0.4s), 사망: enemy-dying(축소+투명 0.55s forwards)
+- endPlayerTurn 전후 HP 비교 → 적 HP 변화 팝업(힐 초록), 플레이어 피격 팝업(빨강)
+- 팝업 animationend stopPropagation, hurt→dying 전환 시 hurt 클리어, 이모지 래퍼 기준 팝업 위치
+
 ## 2026-04-01 — 데미지 팝업 추가 (적 위에 숫자 떠오름 / 빨강·초록)
 - BattleScene: DamagePopup 인터페이스, popups state, spawnEnemyPopups — before/after HP 비교로 delta 계산
 - 팝업: onAnimationEnd로 자동 제거, 언마운트 시 setPopups([]) cleanup, overflow-visible 명시

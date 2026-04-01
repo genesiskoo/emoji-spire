@@ -48,8 +48,8 @@ function IntentDisplay({ intent }: { intent: Intent }) {
 
 interface DamagePopup {
   id: number;
-  value: number;       // 음수 = 데미지(빨강), 양수 = 힐(초록)
-  enemyIndex: number;
+  value: number;              // 음수 = 데미지(빨강), 양수 = 힐(초록)
+  target: number | 'player'; // number = enemyIndex
 }
 
 export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
@@ -59,36 +59,65 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [playingCardId, setPlayingCardId] = useState<string | null>(null);
   const [popups, setPopups] = useState<DamagePopup[]>([]);
+  const [hurtEnemies, setHurtEnemies] = useState<Set<number>>(new Set());
+  const [dyingEnemies, setDyingEnemies] = useState<Set<number>>(new Set());
   const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const popupIdRef = useRef(0);
 
   useEffect(() => {
     return () => {
       if (playTimerRef.current !== null) clearTimeout(playTimerRef.current);
-      setPopups([]); // 언마운트 시 팝업 잔류 방지 (C-1)
+      setPopups([]);
     };
   }, []);
 
   const PLAY_ANIM_MS = 350;
 
-  function spawnEnemyPopups(before: BattleState, after: BattleState) {
+  // before/after HP 비교로 팝업·피격 모션 일괄 처리
+  function spawnPopups(before: BattleState, after: BattleState) {
     const newPopups: DamagePopup[] = [];
+    const newHurt = new Set<number>();
+    const newDying = new Set<number>();
+
     before.enemies.forEach((enemy, i) => {
-      const afterHp = after.enemies[i]?.hp;
-      if (afterHp === undefined) return;
-      const delta = afterHp - enemy.hp; // 음수 = 데미지, 양수 = 힐
+      const afterEnemy = after.enemies[i];
+      if (!afterEnemy) return;
+      const delta = afterEnemy.hp - enemy.hp;
       if (delta !== 0) {
-        newPopups.push({ id: ++popupIdRef.current, value: delta, enemyIndex: i });
+        newPopups.push({ id: ++popupIdRef.current, value: delta, target: i });
+      }
+      if (delta < 0) {
+        if (afterEnemy.hp <= 0) {
+          newDying.add(i);
+        } else {
+          newHurt.add(i);
+        }
       }
     });
-    if (newPopups.length > 0) {
-      setPopups(prev => [...prev, ...newPopups]);
+
+    const playerDelta = after.player.hp - before.player.hp;
+    if (playerDelta !== 0) {
+      newPopups.push({ id: ++popupIdRef.current, value: playerDelta, target: 'player' });
+    }
+
+    if (newPopups.length > 0) setPopups(prev => [...prev, ...newPopups]);
+    if (newHurt.size > 0) setHurtEnemies(prev => new Set([...prev, ...newHurt]));
+    if (newDying.size > 0) {
+      // dying 추가 시 동일 적의 hurt도 제거 (W-4: 두 클래스 동시 적용 방지)
+      setHurtEnemies(prev => { const s = new Set(prev); newDying.forEach(i => s.delete(i)); return s; });
+      setDyingEnemies(prev => new Set([...prev, ...newDying]));
     }
   }
 
-  function removePopup(id: number) {
+  function removePopup(id: number, e: React.AnimationEvent) {
+    e.stopPropagation(); // W-3: handleAnimationEnd로 버블링 차단
     setPopups(prev => prev.filter(p => p.id !== id));
   }
+
+  function removeHurt(index: number) {
+    setHurtEnemies(prev => { const s = new Set(prev); s.delete(index); return s; });
+  }
+  // removeDying은 의도적으로 없음: enemy-dying forwards로 opacity:0 영속 유지 (C-1 fix)
 
   function applyAndCheck(next: BattleState, cardName: string) {
     const result = isBattleOver(next);
@@ -109,7 +138,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
     setPlayingCardId(cardId);
     playTimerRef.current = setTimeout(() => {
       const next = playCard(snapshot, cardId);
-      spawnEnemyPopups(snapshot, next);
+      spawnPopups(snapshot, next);
       setPlayingCardId(null);
       applyAndCheck(next, card.name);
     }, PLAY_ANIM_MS);
@@ -132,7 +161,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
     setPlayingCardId(cardId);
     playTimerRef.current = setTimeout(() => {
       const next = playCard(snapshot, cardId, enemyIndex);
-      spawnEnemyPopups(snapshot, next);
+      spawnPopups(snapshot, next);
       setPlayingCardId(null);
       applyAndCheck(next, card.name);
     }, PLAY_ANIM_MS);
@@ -141,7 +170,9 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   function handleEndTurn() {
     if (isOver || playingCardId) return;
     setSelectedCardId(null);
-    const next = endPlayerTurn(battle);
+    const snapshot = battle;
+    const next = endPlayerTurn(snapshot);
+    spawnPopups(snapshot, next);
     const result = isBattleOver(next);
     setBattle(next);
     setLog(`턴 ${next.turn} 시작`);
@@ -180,22 +211,39 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
         {enemies.map((enemy, index) => {
           const isAlive = enemy.hp > 0;
           const isClickable = isTargeting && isAlive;
+          const isHurt = hurtEnemies.has(index);
+          const isDying = dyingEnemies.has(index);
+
+          // enemy-dying은 forwards로 opacity:0을 유지하므로 제거하지 않음 (C-1)
+          function handleAnimationEnd(e: React.AnimationEvent<HTMLDivElement>) {
+            if (e.animationName === 'enemy-hurt') removeHurt(index);
+          }
+
           return (
             <div
               key={enemy.id}
               onClick={() => isClickable && handleEnemyClick(index)}
+              onAnimationEnd={handleAnimationEnd}
               className={[
-                'relative overflow-visible bg-gray-800 rounded-xl p-4 w-44 flex flex-col gap-2 border transition-all duration-150',
-                !isAlive ? 'border-gray-700 opacity-40 pointer-events-none' : '',
-                isClickable
+                'relative overflow-visible bg-gray-800 rounded-xl p-4 w-44 flex flex-col gap-2 border',
+                isDying
+                  ? 'enemy-dying border-gray-600'
+                  : isHurt
+                    ? 'enemy-hurt border-gray-600'
+                    : 'transition-all duration-150',
+                // isDying이 영속되므로 사망 후에도 opacity-40 적용 불필요
+                !isAlive && !isDying ? 'border-gray-700 opacity-40 pointer-events-none' : '',
+                !isDying && !isHurt && isClickable
                   ? 'border-red-400 cursor-crosshair ring-2 ring-red-400/60 hover:ring-red-400 hover:scale-105'
-                  : 'border-gray-600',
+                  : !isDying && !isHurt && isAlive
+                    ? 'border-gray-600'
+                    : '',
               ].join(' ')}
             >
-              {popups.filter(p => p.enemyIndex === index).map(popup => (
+              {popups.filter(p => p.target === index).map(popup => (
                 <span
                   key={popup.id}
-                  onAnimationEnd={() => removePopup(popup.id)}
+                  onAnimationEnd={e => removePopup(popup.id, e)}
                   className={`damage-popup ${popup.value < 0 ? 'text-red-400' : 'text-green-400'}`}
                 >
                   {popup.value < 0 ? popup.value : `+${popup.value}`}
@@ -226,7 +274,19 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
         className="bg-gray-800 rounded-xl p-4 flex gap-4 items-center border border-gray-600"
         onClick={e => e.stopPropagation()}
       >
-        <div className="text-4xl">🧙</div>
+        {/* 이모지 래퍼 — 팝업이 이모지 위에 정확히 뜨도록 relative 기준점 설정 (W-6) */}
+        <div className="relative overflow-visible">
+          {popups.filter(p => p.target === 'player').map(popup => (
+            <span
+              key={popup.id}
+              onAnimationEnd={e => removePopup(popup.id, e)}
+              className={`damage-popup ${popup.value < 0 ? 'text-red-400' : 'text-green-400'}`}
+            >
+              {popup.value < 0 ? popup.value : `+${popup.value}`}
+            </span>
+          ))}
+          <div className="text-4xl">🧙</div>
+        </div> {/* /이모지 래퍼 */}
         <div className="flex-1 flex flex-col gap-1">
           <div className="flex justify-between text-sm">
             <span className="font-bold">플레이어</span>
