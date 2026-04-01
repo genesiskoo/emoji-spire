@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-04-01 — 커맨드 추가
+- `/session-start` 커맨드: 세션 시작 시 임시 파일 확인·디렉토리 구조·빌드·CHANGELOG·SESSION_CONTEXT 체크 워크플로우
+- `/session-end` 커맨드: 세션 종료 시 임시 파일 정리·디버그 로그 제거·빌드 확인·CHANGELOG 기록·커밋·푸시 워크플로우
+
 ## 2026-04-01 — Phase 2 완료
 **Phase 2: Command (콘텐츠 자동화) 완료**
 - `/implement` 커맨드: 기능 구현 → 빌드 확인 → code-reviewer 리뷰 → 수정 → CHANGELOG 기록 워크플로우
