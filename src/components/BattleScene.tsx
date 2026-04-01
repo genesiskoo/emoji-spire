@@ -46,21 +46,49 @@ function IntentDisplay({ intent }: { intent: Intent }) {
   return <span className="text-xs text-yellow-400">🔥 버프</span>;
 }
 
+interface DamagePopup {
+  id: number;
+  value: number;       // 음수 = 데미지(빨강), 양수 = 힐(초록)
+  enemyIndex: number;
+}
+
 export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   const [battle, setBattle] = useState<BattleState>(initialBattle);
   const [log, setLog] = useState<string>('전투 시작!');
   const [isOver, setIsOver] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [playingCardId, setPlayingCardId] = useState<string | null>(null);
+  const [popups, setPopups] = useState<DamagePopup[]>([]);
   const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popupIdRef = useRef(0);
 
   useEffect(() => {
     return () => {
       if (playTimerRef.current !== null) clearTimeout(playTimerRef.current);
+      setPopups([]); // 언마운트 시 팝업 잔류 방지 (C-1)
     };
   }, []);
 
   const PLAY_ANIM_MS = 350;
+
+  function spawnEnemyPopups(before: BattleState, after: BattleState) {
+    const newPopups: DamagePopup[] = [];
+    before.enemies.forEach((enemy, i) => {
+      const afterHp = after.enemies[i]?.hp;
+      if (afterHp === undefined) return;
+      const delta = afterHp - enemy.hp; // 음수 = 데미지, 양수 = 힐
+      if (delta !== 0) {
+        newPopups.push({ id: ++popupIdRef.current, value: delta, enemyIndex: i });
+      }
+    });
+    if (newPopups.length > 0) {
+      setPopups(prev => [...prev, ...newPopups]);
+    }
+  }
+
+  function removePopup(id: number) {
+    setPopups(prev => prev.filter(p => p.id !== id));
+  }
 
   function applyAndCheck(next: BattleState, cardName: string) {
     const result = isBattleOver(next);
@@ -80,8 +108,10 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
     const snapshot = battle;
     setPlayingCardId(cardId);
     playTimerRef.current = setTimeout(() => {
+      const next = playCard(snapshot, cardId);
+      spawnEnemyPopups(snapshot, next);
       setPlayingCardId(null);
-      applyAndCheck(playCard(snapshot, cardId), card.name);
+      applyAndCheck(next, card.name);
     }, PLAY_ANIM_MS);
   }
 
@@ -101,8 +131,10 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
     setSelectedCardId(null);
     setPlayingCardId(cardId);
     playTimerRef.current = setTimeout(() => {
+      const next = playCard(snapshot, cardId, enemyIndex);
+      spawnEnemyPopups(snapshot, next);
       setPlayingCardId(null);
-      applyAndCheck(playCard(snapshot, cardId, enemyIndex), card.name);
+      applyAndCheck(next, card.name);
     }, PLAY_ANIM_MS);
   }
 
@@ -153,13 +185,22 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
               key={enemy.id}
               onClick={() => isClickable && handleEnemyClick(index)}
               className={[
-                'bg-gray-800 rounded-xl p-4 w-44 flex flex-col gap-2 border transition-all duration-150',
+                'relative overflow-visible bg-gray-800 rounded-xl p-4 w-44 flex flex-col gap-2 border transition-all duration-150',
                 !isAlive ? 'border-gray-700 opacity-40 pointer-events-none' : '',
                 isClickable
                   ? 'border-red-400 cursor-crosshair ring-2 ring-red-400/60 hover:ring-red-400 hover:scale-105'
                   : 'border-gray-600',
               ].join(' ')}
             >
+              {popups.filter(p => p.enemyIndex === index).map(popup => (
+                <span
+                  key={popup.id}
+                  onAnimationEnd={() => removePopup(popup.id)}
+                  className={`damage-popup ${popup.value < 0 ? 'text-red-400' : 'text-green-400'}`}
+                >
+                  {popup.value < 0 ? popup.value : `+${popup.value}`}
+                </span>
+              ))}
               <div className="text-4xl text-center">{enemy.emoji}</div>
               <div className="text-sm font-bold text-center">{enemy.name}</div>
               <HpBar hp={enemy.hp} maxHp={enemy.maxHp} />

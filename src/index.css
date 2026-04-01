@@ -20,3 +20,22 @@
   pointer-events: none;
   transition: none;
 }
+
+@keyframes damage-float {
+  0%   { transform: translate(-50%, 0)     scale(1);    opacity: 1; }
+  15%  { transform: translate(-50%, -6px)  scale(1.3);  opacity: 1; }
+  100% { transform: translate(-50%, -44px) scale(0.85); opacity: 0; }
+}
+
+.damage-popup {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  animation: damage-float 0.8s ease-out forwards;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}

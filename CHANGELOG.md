@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-01 — 데미지 팝업 추가 (적 위에 숫자 떠오름 / 빨강·초록)
+- BattleScene: DamagePopup 인터페이스, popups state, spawnEnemyPopups — before/after HP 비교로 delta 계산
+- 팝업: onAnimationEnd로 자동 제거, 언마운트 시 setPopups([]) cleanup, overflow-visible 명시
+- index.css: damage-float keyframe (0.8s) + .damage-popup 클래스
+
 ## 2026-04-01 — 카드 애니메이션 추가 (호버 확대, 선택 글로우, 사용 시 fly-out)
 - CardHand: hover scale-110 + -translate-y-5, 타입별 선택 글로우(red/blue/yellow), playingCardId prop
 - BattleScene: playingCardId state + useRef 타이머로 fly-out 350ms 후 카드 적용, 애니메이션 중 턴 종료 차단
