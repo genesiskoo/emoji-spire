@@ -7,7 +7,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'attack',
     cost: 1,
     description: '적에게 6 피해를 입힌다.',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state: BattleState, targetIndex = 0) => dealDamage(state, targetIndex, 6),
   },
   {
@@ -15,7 +15,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'defense',
     cost: 1,
     description: '블록 5를 얻는다.',
-    requiresTarget: false,
+    targetType: 'none',
     effect: (state: BattleState) => addBlock(state, 5),
   },
   {
@@ -23,7 +23,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'attack',
     cost: 2,
     description: '적에게 14 피해를 입힌다.',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state: BattleState, targetIndex = 0) => dealDamage(state, targetIndex, 14),
   },
   {
@@ -31,7 +31,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'attack',
     cost: 1,
     description: '적에게 3 피해를 2번 입힌다.',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state: BattleState, targetIndex = 0) => {
       const s1 = dealDamage(state, targetIndex, 3);
       return dealDamage(s1, targetIndex, 3);
@@ -42,7 +42,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'defense',
     cost: 1,
     description: '블록 8을 얻는다.',
-    requiresTarget: false,
+    targetType: 'none',
     effect: (state: BattleState) => addBlock(state, 8),
   },
   {
@@ -50,7 +50,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'skill',
     cost: 1,
     description: '힘 2를 얻는다.',
-    requiresTarget: false,
+    targetType: 'none',
     effect: (state: BattleState) => applyStatusEffect(state, 'player', 'strength', 2),
   },
   {
@@ -58,7 +58,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'skill',
     cost: 1,
     description: '적에게 취약 2를 부여한다.',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state: BattleState, targetIndex = 0) => applyStatusEffect(state, 'enemy', 'vulnerable', 2, targetIndex),
   },
   {
@@ -66,7 +66,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'attack',
     cost: 2,
     description: '적에게 18 피해를 입힌다.',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state: BattleState, targetIndex = 0) => dealDamage(state, targetIndex, 18),
   },
   {
@@ -74,7 +74,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'defense',
     cost: 2,
     description: '블록 14를 얻는다.',
-    requiresTarget: false,
+    targetType: 'none',
     effect: (state: BattleState) => addBlock(state, 14),
   },
   {
@@ -82,7 +82,7 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'skill',
     cost: 1,
     description: '적에게 약화 2를 부여한다.',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state: BattleState, targetIndex = 0) => applyStatusEffect(state, 'enemy', 'weakness', 2, targetIndex),
   },
   {
@@ -90,8 +90,17 @@ export const ALL_CARDS: Omit<Card, 'id'>[] = [
     type: 'attack',
     cost: 2,
     description: '적에게 12 피해를 입힌다.',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state: BattleState, targetIndex = 0) => dealDamage(state, targetIndex, 12),
+  },
+  {
+    name: '지진',
+    type: 'attack',
+    cost: 2,
+    description: '모든 적에게 8 피해를 입힌다.',
+    targetType: 'all',
+    effect: (state: BattleState) =>
+      state.enemies.reduce((s, _, i) => dealDamage(s, i, 8), state),
   },
 ];
 

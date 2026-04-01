@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-04-01 — 맵 노드 고립 버그 수정
+- generateMap 연결 로직 수정: 랜덤 배정 전 shuffle+round-robin으로 다음 층 모든 노드에 최소 1개 인입 연결 보장 → 선택 불가 고립 노드 발생 방지 (~11%/floor 재현율)
+
+## 2026-04-01 — 전역 덱 뷰어 모달 추가
+- DeckViewer 컴포넌트 신규: 보유 카드 그리드 표시, 전투 중 덱/버리기 더미 탭 구분 (role=dialog, aria-modal, Escape 닫기)
+- App.tsx에 "📚 덱 보기" fixed 버튼 추가 — 전투/맵/상점/이벤트 전 씬에서 동작
+- BattleScene에 onBattleStateChange 콜백 추가 → 전투 중 실시간 덱 상태를 ref로 App에 전달
+- handleBattleEnd 버그 수정: stale prev.battle 대신 liveBattleRef.current로 최종 HP/골드 반영
+
+## 2026-04-01 — 지진 카드 추가 + targetType 마이그레이션
+- Card 타입에 `targetType: 'single' | 'all' | 'none'` 추가, `requiresTarget` 제거 — 기존 카드 11장 마이그레이션
+- 신규 카드: 지진 (비용 2, 공격, 모든 적에게 8 피해) — `targetType: 'all'` 즉시 사용, 타겟 선택 없음
+- battle.test.ts에 AoE 카드 테스트 2건 추가 (다중 적 공격, 사망한 적 건너뜀)
+
 ## 2026-04-01 — 턴 전환 배너 + screen shake 추가
 - "⚔️ 적의 턴" / "🛡️ 내 턴" fixed 오버레이 배너 (슬라이드인 1.5s), 전투 시작·턴 종료 시 순차 표시
 - 플레이어 피격 시 게임 콘텐츠 screen-shake 0.45s

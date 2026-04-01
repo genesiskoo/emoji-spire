@@ -1,4 +1,5 @@
 import type { MapNode, NodeType } from '../types';
+import { shuffle } from './battle';
 
 const NODE_EMOJIS: Record<NodeType, string> = {
   battle: '⚔️',
@@ -69,13 +70,40 @@ export function generateMap(acts = 3): MapNode[] {
       const currentFloor = actNodes[floor];
       const nextFloor = actNodes[floor + 1];
 
+      // 연결 초기화
       for (const node of currentFloor) {
-        const connectCount = Math.min(2, nextFloor.length);
-        const indices = new Set<number>();
-        while (indices.size < connectCount) {
-          indices.add(Math.floor(Math.random() * nextFloor.length));
+        node.connections = [];
+      }
+
+      // Step 1: 다음 층의 모든 노드에 최소 1개의 인입 연결 보장
+      // 셔플 후 round-robin으로 배분 → 어떤 노드도 고립되지 않음
+      const shuffledNextIndices = shuffle(nextFloor.map((_, i) => i));
+      shuffledNextIndices.forEach((nextIdx, i) => {
+        const currNode = currentFloor[i % currentFloor.length];
+        const nextId = nextFloor[nextIdx].id;
+        if (!currNode.connections.includes(nextId)) {
+          currNode.connections.push(nextId);
         }
-        node.connections = [...indices].map(i => nextFloor[i].id);
+      });
+
+      // Step 2: 현재 층 노드가 연결 없는 경우 보정 (안전망)
+      for (const node of currentFloor) {
+        if (node.connections.length === 0) {
+          const nextIdx = Math.floor(Math.random() * nextFloor.length);
+          node.connections.push(nextFloor[nextIdx].id);
+        }
+      }
+
+      // Step 3: 최대 2개까지 랜덤 추가 연결
+      const maxConns = Math.min(2, nextFloor.length);
+      for (const node of currentFloor) {
+        for (let attempt = 0; node.connections.length < maxConns && attempt < 20; attempt++) {
+          const nextIdx = Math.floor(Math.random() * nextFloor.length);
+          const nextId = nextFloor[nextIdx].id;
+          if (!node.connections.includes(nextId)) {
+            node.connections.push(nextId);
+          }
+        }
       }
     }
 

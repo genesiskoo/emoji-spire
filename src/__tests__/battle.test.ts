@@ -41,7 +41,7 @@ function makeCard(overrides: Partial<Card> = {}): Card {
     type: 'attack',
     cost: 1,
     description: '6 damage',
-    requiresTarget: true,
+    targetType: 'single',
     effect: (state, targetIndex = 0) => dealDamage(state, targetIndex, 6),
     ...overrides,
   };
@@ -213,6 +213,36 @@ describe('playCard', () => {
     expect(result.hand).toHaveLength(1);
     expect(result.hand[0].id).toBe('card-2');
   });
+
+  it('targetType: all 카드가 모든 살아있는 적에게 데미지를 입힌다', () => {
+    const aoeCard = makeCard({
+      id: 'quake',
+      targetType: 'all',
+      effect: (state) => state.enemies.reduce((s, _, i) => dealDamage(s, i, 8), state),
+    });
+    const state = makeState({
+      hand: [aoeCard],
+      enemies: [makeEnemy({ id: 'e1', hp: 20 }), makeEnemy({ id: 'e2', hp: 15 })],
+    });
+    const result = playCard(state, 'quake');
+    expect(result.enemies[0].hp).toBe(12); // 20 - 8
+    expect(result.enemies[1].hp).toBe(7);  // 15 - 8
+  });
+
+  it('targetType: all 카드가 이미 죽은 적은 건너뛴다', () => {
+    const aoeCard = makeCard({
+      id: 'quake',
+      targetType: 'all',
+      effect: (state) => state.enemies.reduce((s, _, i) => dealDamage(s, i, 8), state),
+    });
+    const state = makeState({
+      hand: [aoeCard],
+      enemies: [makeEnemy({ id: 'e1', hp: 0 }), makeEnemy({ id: 'e2', hp: 15 })],
+    });
+    const result = playCard(state, 'quake');
+    expect(result.enemies[0].hp).toBe(0);  // 이미 죽음, 변화 없음
+    expect(result.enemies[1].hp).toBe(7);  // 15 - 8
+  });
 });
 
 // ===== endPlayerTurn =====
@@ -266,7 +296,7 @@ describe('endPlayerTurn', () => {
 
   it('덱에 카드가 있으면 5장을 드로우한다', () => {
     const deck = Array.from({ length: 10 }, (_, i) =>
-      makeCard({ id: `card-${i}`, cost: 0, requiresTarget: false, effect: s => s })
+      makeCard({ id: `card-${i}`, cost: 0, targetType: 'none', effect: s => s })
     );
     const state = makeState({ deck });
     const result = endPlayerTurn(state);

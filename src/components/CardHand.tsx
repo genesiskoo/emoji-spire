@@ -37,7 +37,7 @@ export function CardHand({ cards, energy, selectedCardId, playingCardId, onSelec
 
         function handleClick() {
           if (!playable || isFlying) return;
-          if (card.requiresTarget) {
+          if (card.targetType === 'single') {
             onSelectCard(isSelected ? null : card.id);
           } else {
             onPlayCard(card.id);

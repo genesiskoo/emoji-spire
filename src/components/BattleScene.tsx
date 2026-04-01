@@ -6,6 +6,7 @@ import { CardHand } from './CardHand';
 interface BattleSceneProps {
   initialBattle: BattleState;
   onBattleEnd: (result: 'win' | 'lose') => void;
+  onBattleStateChange?: (state: BattleState) => void;
 }
 
 function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
@@ -58,7 +59,7 @@ const BANNER_CONFIG = {
   player: { text: '🛡️ 내 턴', style: 'bg-blue-900/85 text-blue-100 border-blue-500' },
 } as const;
 
-export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
+export function BattleScene({ initialBattle, onBattleEnd, onBattleStateChange }: BattleSceneProps) {
   const [battle, setBattle] = useState<BattleState>(initialBattle);
   const [log, setLog] = useState<string>('전투 시작!');
   const [isOver, setIsOver] = useState(false);
@@ -136,6 +137,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
   function applyAndCheck(next: BattleState, cardName: string) {
     const result = isBattleOver(next);
     setBattle(next);
+    onBattleStateChange?.(next);
     setLog(`${cardName} 사용`);
     if (result) {
       setIsOver(true);
@@ -189,6 +191,7 @@ export function BattleScene({ initialBattle, onBattleEnd }: BattleSceneProps) {
     spawnPopups(snapshot, next);
     const result = isBattleOver(next);
     setBattle(next);
+    onBattleStateChange?.(next);
     setLog(`턴 ${next.turn} 시작`);
     if (result) {
       setIsOver(true);

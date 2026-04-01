@@ -1,5 +1,6 @@
 // ===== 카드 타입 =====
 export type CardType = 'attack' | 'defense' | 'skill';
+export type TargetType = 'single' | 'all' | 'none';
 
 export interface Card {
   id: string;
@@ -7,7 +8,7 @@ export interface Card {
   type: CardType;
   cost: number;
   description: string;
-  requiresTarget: boolean;
+  targetType: TargetType;
   effect: (state: BattleState, targetIndex?: number) => BattleState;
 }
 
