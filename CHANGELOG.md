@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-01 — 세션 마무리
+- SESSION_CONTEXT.md 생성: Phase 3 완료 사항·핵심 발견사항 기록 (세션 간 인수인계용)
+
+## 2026-04-01 — GDD 생성
+- generate-gdd 스킬로 GDD.md 자동 생성: 카드 11장·적 6종·이벤트 3종 정리, 밸런스 노트 포함
+
+## 2026-04-01 — README 생성
+- generate-readme 스킬로 README.md 자동 생성: 카드/적 목록 표, Claude Code 실습 로드맵, 설치 가이드 포함
+
+## 2026-04-01 — Phase 3 Skill 실습
+- `generate-gdd` 스킬 생성 (.claude/skills/generate-gdd/SKILL.md + references/output-format.md): cards/enemies/events 파싱 → GDD.md 자동 생성, 번들 참조 파일 포함
+- `generate-readme` 스킬 생성 (.claude/skills/generate-readme/SKILL.md): 소스 코드·CLAUDE.md·CHANGELOG 분석 → README.md 자동 생성 워크플로우
+
 ## 2026-04-01 — 커맨드 추가
 - `/session-start` 커맨드: 세션 시작 시 임시 파일 확인·디렉토리 구조·빌드·CHANGELOG·SESSION_CONTEXT 체크 워크플로우
 - `/session-end` 커맨드: 세션 종료 시 임시 파일 정리·디버그 로그 제거·빌드 확인·CHANGELOG 기록·커밋·푸시 워크플로우
